@@ -1,4 +1,35 @@
-:root {
+#root {
+  margin: 0;
+  padding: 0;
+}
+
+select {
+  margin: 0.5em;
+  padding: 0.5em;
+}
+
+input[type='text'] {
+  width: 50vw;
+  padding: 0.5em;
+  margin: 0 0.5em;
+}
+
+input[type='submit'] {
+  padding: 0.1em 0.5em;
+}
+
+ul {
+  list-style: none;
+  margin-left: 0.5em;
+  padding-left: 0;
+}
+
+li {
+  margin-bottom: 0.5em;
+}
+
+
+/* :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
@@ -67,4 +98,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-}
+} */
