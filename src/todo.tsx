@@ -7,10 +7,14 @@ type Todo = {
   delete_flg: boolean;
 };
 
+type Filter = 'all'|'completed'|'unchecked'|'delete';
+
+// Todoコンポーネント
 const Todo: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState('');
   const [nexId, setNextId] = useState(1);
+  const [filter, setFilter] = useState<Filter>('all');
 
   
   const handleSubmit = () => {
@@ -81,47 +85,87 @@ const handleRemove = (id: number, delete_flg: boolean) => {
   });
 };
 
+const handleFilterChange = (filter: Filter) => {
+  setFilter(filter);
+};
 
-  return(
-   <div>
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleSubmit();
-      }}
+const getFilteredTodos = () => {
+  switch(filter) {
+    case 'completed':
+      return todos.filter((todo)=> todo.completed_flg && !todo.delete_flg);
+    case 'unchecked':
+      return todos.filter((todo) => !todo.completed_flg && !todo.delete_flg);
+    case 'delete':
+      return todos.filter((todo) => todo.delete_flg);
+    default:
+      return todos.filter((todo) => !todo.delete_flg)
+  }
+}
+
+const isFormDisabled = filter === 'completed' || filter === 'delete' ;
+
+const handleEmpty = () => {
+  setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
+};
+
+
+return (
+  <div className="todo-container">
+    <select
+      defaultValue="all"
+      onChange={(e) => handleFilterChange(e.target.value as Filter)}
     >
-
-    <input
-      type="text"
-      value={text}
-      onChange={(e)=> setText(e.target.value)}
-    />
-    <input type="submit" content="追加"/>
-    </form>
+      <option value="all">すべてのタスク</option>
+      <option value="completed">完了したタスク</option>
+      <option value="unchecked">現在のタスク</option>
+      <option value="delete">ごみ箱</option>
+    </select>
+    {/* フィルターが `delete` のときは「ごみ箱を空にする」ボタンを表示 */}
+    {filter === 'delete' ? (
+      <button onClick={handleEmpty}>
+        ごみ箱を空にする
+      </button>
+    ) : (
+      // フィルターが `completed` でなければ Todo 入力フォームを表示
+      filter !== 'completed' && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <input
+            type="text"
+            value={text} // フォームの入力値をステートにバインド
+            disabled={isFormDisabled}
+            onChange={(e) => setText(e.target.value)} // 入力値が変わった時にステートを更新
+          />
+          <button type="submit">追加</button>
+        </form>
+      )
+    )}
     <ul>
-      { todos.map((todo) =>{
-        return (
-          <li key={todo.id}>
-            <input
-              type="checkbox"
-              checked={todo.completed_flg}
-              onChange={() => handleCheck(todo.id, !todo.completed_flg)}
-            />
-            <input
-              type="text"
-              value= {todo.content}
-              disabled ={todo.completed_flg}
-              onChange={(e) => handleEdit(todo.id, e.target.value)}
-            />
-            <button onClick={() => handleRemove(todo.id, !todo.delete_flg)}>
-              {todo.delete_flg? '復元' : '削除'}
-            </button>
-          </li>
-        );
-      })}
+      {getFilteredTodos().map((todo) => (
+        <li key={todo.id}>
+          <input
+            type="checkbox"
+            checked={todo.completed_flg}
+            onChange={() => handleCheck(todo.id, !todo.completed_flg)}
+          />
+          <input
+            type="text"
+            value={todo.content}
+            // disabled={isFormDisabled}
+            onChange={(e) => handleEdit(todo.id, e.target.value)}
+          />
+          <button onClick={() => handleRemove(todo.id, !todo.delete_flg)}>
+            {todo.delete_flg ? '復元' : '削除'}
+          </button>
+        </li>
+      ))}
     </ul>
-   </div> 
-  );
+  </div>
+);
 };
 
 export default Todo;
