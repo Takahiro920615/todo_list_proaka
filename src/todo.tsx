@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import localforage from 'localforage';
+
 
 type Todo = {
   content: string;
@@ -15,6 +17,19 @@ const Todo: React.FC = () => {
   const [text, setText] = useState('');
   const [nexId, setNextId] = useState(1);
   const [filter, setFilter] = useState<Filter>('all');
+
+  useEffect(()=> {
+    localforage.getItem('todo-20240622').then((values)=> {
+      if (values) {
+        setTodos(values as Todo[]);
+      }
+    });
+  }, []);
+
+  useEffect(()=> {
+    localforage.setItem('todo-20240622', todos);
+  }, [todos]);
+
 
   
   const handleSubmit = () => {
@@ -36,54 +51,50 @@ const Todo: React.FC = () => {
   setText('');
 };
 
-const handleEdit = (id: number, value: string) => {
-  setTodos((todos) => {
-    /**
-     * 引数として渡された todo の id が一致する
-     * 更新前の todos ステート内の todo の
-     * value プロパティを引数 value (= e.target.value) に書き換える
-     */
-    const newTodos = todos.map((todo) => {
-      if (todo.id === id) {
-        return { ...todo, content: value};
-      }
-      return todo;
-    });
+// const handleEdit = (id: number, value: string) => {
+//   setTodos((todos) => {
+   
+//     const newTodos = todos.map((todo) => {
+//       if (todo.id === id) {
+//         return { ...todo, content: value};
+//       }
+//       return todo;
+//     });
 
-    console.log('=== Original todos ===');
-    todos.map((todo) => {
-      console.log(`id: ${todo.id}, content: ${todo.content}`);
-    });
+//     console.log('=== Original todos ===');
+//     todos.map((todo) => {
+//       console.log(`id: ${todo.id}, content: ${todo.content}`);
+//     });
     
-    // todos ステートを更新
-    return newTodos;
-  });
-};
+//     // todos ステートを更新
+//     return newTodos;
+//   });
+// };
 
-const handleCheck = (id: number, completed_flg: boolean) => {
-  setTodos((todos) => {
-    const newTodos = todos.map((todo) => {
-      if(todo.id === id) {
-        return { ...todo, completed_flg};
-      }
-      return todo;
-    });
-    return newTodos;
-  });
-}
+// const handleCheck = (id: number, completed_flg: boolean) => {
+//   setTodos((todos) => {
+//     const newTodos = todos.map((todo) => {
+//       if(todo.id === id) {
+//         return { ...todo, completed_flg};
+//       }
+//       return todo;
+//     });
+//     return newTodos;
+//   });
+// };
 
-const handleRemove = (id: number, delete_flg: boolean) => {
-  setTodos((todos) => {
-    const newTodos = todos.map((todo) => {
-      if(todo.id===id) {
-        return{ ...todo,delete_flg};
-      }
-        return todo;
-    });
+// const handleRemove = (id: number, delete_flg: boolean) => {
+//   setTodos((todos) => {
+//     const newTodos = todos.map((todo) => {
+//       if(todo.id===id) {
+//         return{ ...todo,delete_flg};
+//       }
+//         return todo;
+//     });
 
-    return newTodos;
-  });
-};
+//     return newTodos;
+//   });
+// };
 
 const handleFilterChange = (filter: Filter) => {
   setFilter(filter);
@@ -107,6 +118,48 @@ const isFormDisabled = filter === 'completed' || filter === 'delete' ;
 const handleEmpty = () => {
   setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
 };
+
+// ジェネリクス関数==========================
+// const updateTodo = <T extends keyof Todo>(todos: Todo[], id: number, key: T, value: Todo[T]):Todo[]=> {
+//   return todos.map((todo) => {
+//     if(todo.id === id) {
+//       return{ ...todo, [key]:value};
+//     }
+//     return todo;
+//   });
+// };
+
+// const handleEdit = (id:number, value: string) => {
+//   setTodos((todos)=> updateTodo(todos, id, 'content', value));
+// };
+
+// const handleCheck = (id: number, completed_flg: boolean) => {
+//   setTodos((todos) => updateTodo(todos, id, 'completed_flg', completed_flg))
+// }
+
+// const handleRemove = (id:number, delete_flg: boolean) => {
+//   setTodos((todos) => updateTodo(todos, id, 'delete_flg', delete_flg));
+// };
+// ==============================================
+
+const handleTodo = <K extends keyof Todo, V extends Todo[K]>(
+  id: number,
+  key: K,
+  value: V
+) => {
+  setTodos((todos) => {
+    const newTodos = todos.map((todo)=> {
+    if(todo.id === id){
+      return{...todo,[key]:value};
+    } else {
+      return todo;
+    }
+  });
+  return newTodos;
+});
+};
+
+
 
 
 return (
@@ -150,15 +203,15 @@ return (
           <input
             type="checkbox"
             checked={todo.completed_flg}
-            onChange={() => handleCheck(todo.id, !todo.completed_flg)}
+            onChange={() => handleTodo(todo.id, 'completed_flg', !todo.completed_flg)}
           />
           <input
             type="text"
+            disabled={todo.completed_flg || todo.delete_flg}
             value={todo.content}
-            // disabled={isFormDisabled}
-            onChange={(e) => handleEdit(todo.id, e.target.value)}
+            onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
           />
-          <button onClick={() => handleRemove(todo.id, !todo.delete_flg)}>
+          <button onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
             {todo.delete_flg ? '復元' : '削除'}
           </button>
         </li>
